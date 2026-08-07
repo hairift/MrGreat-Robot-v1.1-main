@@ -1,0 +1,31 @@
+tmp/
+# Emoji wajah kustom Mr Great adalah sumber proyek, bukan dependensi, jadi
+# harus ikut tersimpan. Pola tidak boleh berupa "components/" utuh, karena Git
+# tidak dapat membuka pengecualian di dalam direktori yang sudah diabaikan
+# seluruhnya.
+components/*
+!components/mrgreat_emoji/
+managed_components/
+build/
+dist/
+.vscode/
+.devcontainer/
+sdkconfig.old
+sdkconfig
+dependencies.lock
+.env
+releases/
+main/assets/lang_config.h
+main/mmap_generate_emoji.h
+.DS_Store
+.cache
+*.pyc
+*.bin
+mmap_generate_*.h
+.clangd
+
+# Riri Boneka: hasil kerja server saat berjalan
+server/music_cache/
+server/vectorstore/
+server/.env
+server/__pycache__/
