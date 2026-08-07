@@ -166,7 +166,7 @@ public:
         mcp.AddTool(web_search);
 
         auto* music_play = new McpTool("self.music.play",
-            "Putar lagu atau musik lewat speaker boneka. "
+            "Putar lagu atau musik lewat pengeras suara robot. "
             "Gunakan tool ini setiap kali pengguna meminta memutar musik, memainkan lagu, menyetel lagu, request lagu, "
             "atau menyebut kalimat seperti 'putarkan lagu', 'mainkan lagu', 'setel lagu', 'puterin musik', 'play', atau 'nyanyikan lagu' yang diikuti judul lagu maupun nama penyanyi. "
             "Isi parameter song dengan judul lagunya saja, dan parameter artist dengan nama penyanyinya saja. "
@@ -176,7 +176,7 @@ public:
             "Jangan menambahkan kata seperti lagu, musik, putar, atau tolong ke dalam song maupun artist. "
             "Jangan mengarang judul lagu yang tidak disebut pengguna. "
             "Tool ini menjawab seketika bahwa lagunya sedang dicari, bukan bahwa lagunya sudah berbunyi. "
-            "Pencarian dan pengunduhan berjalan sesudahnya, dan selama itu boneka membunyikan nada tunggu, lalu lagunya mulai sendiri. "
+            "Pencarian dan pengunduhan berjalan sesudahnya, dan selama itu robot membunyikan nada tunggu, lalu lagunya mulai sendiri. "
             "Sampaikan kembali kalimat status dari tool ini apa adanya secara singkat. "
             "Jangan berkata lagunya gagal, tidak ditemukan, atau kehabisan waktu, karena tool ini belum tahu hasil akhirnya saat menjawab. "
             "Jangan mengarang judul, penyanyi, durasi, atau sumber yang tidak dikembalikan tool ini.",
@@ -194,7 +194,7 @@ public:
         mcp.AddTool(music_play);
 
         auto* music_stop = new McpTool("self.music.stop",
-            "Hentikan musik yang sedang diputar boneka. "
+            "Hentikan musik yang sedang diputar robot. "
             "Gunakan tool ini saat pengguna meminta berhenti, stop, matikan lagu, sudah cukup lagunya, atau ganti topik dari musik.",
             PropertyList(),
             [](const PropertyList&) -> ReturnValue {

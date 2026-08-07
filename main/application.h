@@ -45,7 +45,7 @@ enum AecMode {
 
 /**
  * Tambahan Mr Great.
- * Status jaringan khusus untuk lampu indikator RGB. Boneka ini dipakai tanpa
+ * Status jaringan khusus untuk lampu indikator RGB. Robot ini dipakai tanpa
  * layar, jadi warna LED menjadi satu-satunya cara pengguna mengetahui kondisi
  * perangkat.
  */

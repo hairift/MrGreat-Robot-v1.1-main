@@ -9,6 +9,7 @@
 #include "lamp_controller.h"
 #include "led/single_led.h"
 #include "assets/lang_config.h"
+#include "music_player.h"
 #include "servo_controller.h"
 #include "servo_mcp_tools.h"
 #include "campus_mcp_tools.h"
@@ -113,8 +114,8 @@ private:
         }
 
         if (!init_ok) {
-            // Boneka tetap berfungsi penuh tanpa layar; lampu RGB menjadi
-            // penanda status utamanya.
+            // Robot tetap berfungsi penuh tanpa layar; suara dan gerakan
+            // servo menjadi penanda statusnya.
             ESP_LOGE(TAG, "OLED tidak dapat diinisialisasi, memakai tampilan kosong");
             display_ = new NoDisplay();
             return;
@@ -134,6 +135,20 @@ private:
             auto& app = Application::GetInstance();
             if (app.GetDeviceState() == kDeviceStateStarting) {
                 EnterWifiConfigMode();
+                return;
+            }
+
+            // Saat lagu sedang berbunyi, tombol berfungsi sebagai tombol henti
+            // dan tidak membangunkan AI.
+            //
+            // Mr Great tidak punya foil sentuh, jadi tombol inilah satu-satunya
+            // kendali fisik. Deteksi kata pemicu memang dimatikan selama lagu
+            // diputar, karena tanpa peredam gema mikrofon mendengar lagunya
+            // sendiri dan potongan lagu dapat dikenali keliru sebagai kata
+            // pemicu, sehingga lagu berhenti sendiri di tengah.
+            if (MusicPlayer::GetInstance().IsPlaying()) {
+                ESP_LOGI(TAG, "Lagu dihentikan lewat tombol %s", sumber);
+                MusicPlayer::GetInstance().StopAndWait();
                 return;
             }
             if (app.GetDeviceState() == kDeviceStateWifiConfiguring ||

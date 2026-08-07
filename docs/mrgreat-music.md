@@ -11,8 +11,7 @@ alat musik, firmware meminta lagu ke server Mr Great, dan lagunya diputar.
 - "Mainkan lagu Bruno Mars"
 - "Berhenti", "stop", atau "matikan lagunya" untuk menghentikan
 
-Menyentuh foil tangan, kaki, kepala, perut, idung, atau ekor juga langsung
-menghentikan lagu.
+Menekan tombol taktil `GPIO1` atau tombol BOOT juga langsung menghentikan lagu.
 
 ## Alat MCP
 
@@ -162,7 +161,7 @@ bahwa lagunya sudah siap sampai belasan detik kemudian.
 
 `AudioService::PlaySound` menerima fungsi pembatalan agar berkas panjang dapat
 dipotong di tengah. Tanpa itu, nada tunggu tetap mengantre sampai habis dan
-terdengar menimpa awal lagu maupun suara reaksi sentuhan.
+terdengar menimpa awal lagu.
 
 Penghentiannya memakai `AudioService::ResetDecoder`, bukan `ClearPlaybackQueue`.
 `ClearPlaybackQueue` hanya mengosongkan antrean pemutaran, sedangkan nada tunggu
@@ -170,8 +169,8 @@ masih menyisakan paket di antrean dekode yang memuat sampai 2,4 detik audio.
 Paket itu tetap terurai dan berbunyi menimpa awal lagu, sehingga lagunya
 terdengar bertabrakan dengan nada tunggu dan seolah patah-patah.
 
-Sentuhan foil menghentikan nada tunggu lebih dulu, baru memainkan suara
-reaksinya, sehingga keduanya tidak pernah bertumpuk.
+Menekan tombol menghentikan nada tunggu sekaligus membatalkan permintaan lagu,
+sehingga tidak ada sisa nada yang terdengar sesudahnya.
 
 Tanpa nada tunggu, robot terdengar membisu begitu saja dan tidak ada cara
 membedakan "sedang menyiapkan" dari "macet".
@@ -201,17 +200,18 @@ pernah terpenuhi dan lagu selalu gagal tepat setelah batas tunggu.
 Deteksi kata pemicu dimatikan selama lagu diputar.
 
 Papan ini tidak punya peredam gema, jadi mikrofon mendengar lagunya sendiri dan
-bagian lagu mana pun dapat dikenali keliru sebagai "hai hai". Pada pengujian,
+bagian lagu mana pun dapat dikenali keliru sebagai kata pemicu. Pada pengujian,
 satu potongan lagu bernilai 0,162 sementara kata pemicu asli pernah bernilai
 0,139, sehingga keduanya memang tidak dapat dipisahkan oleh ambang mana pun.
 Ketika deteksi dibiarkan menyala, lagu berhenti sendiri di tengah tanpa ada yang
 memintanya.
 
-Untuk menghentikan lagu, sentuh bagian mana pun dari robot. Menyentuh foil
-tangan sekaligus membangunkan AI, sehingga percakapan dapat dilanjutkan seperti
-biasa.
+Mr Great tidak punya foil sentuh, jadi penghentiannya memakai tombol. Selama
+lagu berbunyi, tombol taktil `GPIO1` maupun tombol BOOT bawaan papan berfungsi
+sebagai tombol henti dan tidak membangunkan AI. Setelah lagu berhenti, tombol
+yang sama kembali berfungsi seperti biasa untuk memulai percakapan.
 
-Lagu berhenti otomatis saat foil disentuh, saat AI memanggil `self.music.stop`,
+Lagu berhenti otomatis saat tombol ditekan, saat AI memanggil `self.music.stop`,
 saat perangkat keluar dari status menganggur, atau saat berkas lagu selesai.
 
 ## Pengaturan

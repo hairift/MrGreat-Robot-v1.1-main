@@ -54,7 +54,7 @@ void WifiBoard::StartNetwork() {
 
     // Initialize WiFi manager
     WifiManagerConfig config;
-    // Nama hotspot konfigurasi Wi-Fi memakai identitas boneka.
+    // Nama hotspot konfigurasi Wi-Fi memakai identitas robot.
     config.ssid_prefix = "MrGreat";
     config.language = Lang::CODE;
     config.show_ota_config = true;

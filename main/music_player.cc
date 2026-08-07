@@ -569,7 +569,7 @@ std::string MusicPlayer::Play(const std::string& song, const std::string& artist
         return std::string("Memori perangkat tidak cukup untuk memutar musik saat ini.");
     }
 
-    // Ditandai sebelum tugas dibuat supaya Stop() dari sentuhan foil pada celah
+    // Ditandai sebelum tugas dibuat supaya Stop() dari tombol pada celah
     // waktu singkat ini tetap terhitung.
     playing_ = true;
     streaming_ = false;
@@ -590,7 +590,7 @@ std::string MusicPlayer::Play(const std::string& song, const std::string& artist
     // Kata pemicu tidak disebut sebagai cara berhenti, karena selama lagu
     // diputar deteksinya memang dimatikan supaya lagu tidak berhenti sendiri.
     answer += "Akan terdengar nada tunggu sebentar, lalu lagunya mulai sendiri. "
-              "Tekan tombol di kaki Mr Great untuk menghentikan lagunya.";
+              "Tekan tombol manual pada Mr Great untuk menghentikan lagunya.";
     return answer;
 }
 
@@ -822,7 +822,7 @@ void MusicPlayer::HentikanNadaTunggu() {
     nada_tunggu_aktif_ = false;
     // Ditunggu sampai benar-benar berhenti, kalau tidak sisa paketnya masih
     // sempat masuk antrean setelah antrean dikosongkan dan justru terdengar
-    // menimpa awal lagu maupun suara reaksi sentuhan.
+    // menimpa awal lagu.
     xEventGroupWaitBits(event_group_, kNadaTungguTaskDone, pdFALSE, pdTRUE,
                         pdMS_TO_TICKS(kNadaTungguBerhentiTimeoutMs));
 
@@ -928,7 +928,7 @@ void MusicPlayer::RunNetwork() {
     // Instance server yang baru dibangunkan, Wi-Fi yang sedang tersendat, dan
     // lagu yang perlu diunduh lebih dahulu sama-sama dapat membuat percobaan
     // pertama gagal padahal lagunya ada. Nada tunggu berbunyi selama ini, jadi
-    // penantiannya terdengar sebagai proses, bukan sebagai boneka yang macet.
+    // penantiannya terdengar sebagai proses, bukan sebagai robot yang macet.
     MusicTrack track;
     bool ketemu = false;
     for (int percobaan = 1; percobaan <= kResolvePercobaanMaks && !stop_requested_.load(); ++percobaan) {
@@ -1072,7 +1072,7 @@ void MusicPlayer::RunDecoder() {
 
     // Nada tunggu berbunyi selama lagu dicari dan diunduh.
     //
-    // Tanpa itu boneka terdengar membisu begitu saja, dan tidak ada cara
+    // Tanpa itu robot terdengar membisu begitu saja, dan tidak ada cara
     // membedakan "sedang menyiapkan" dari "macet". Itulah yang paling sering
     // ditanyakan ketika ada gangguan.
     // Ambang isi awal tidak boleh melebihi kapasitas yang benar-benar didapat.
@@ -1139,9 +1139,9 @@ void MusicPlayer::RunDecoder() {
     // oleh ambang mana pun. Akibatnya lagu berhenti sendiri di tengah tanpa ada
     // yang memintanya.
     //
-    // Untuk menghentikan lagu, sentuh foil mana pun. Menyentuh foil tangan
-    // sekaligus membangunkan AI, sehingga permintaan seperti "berhentikan
-    // musik" tetap dapat disampaikan lewat alat self.music.stop.
+    // Untuk menghentikan lagu, tekan tombol taktil GPIO1 atau tombol BOOT.
+    // Selama lagu berbunyi, kedua tombol itu berfungsi sebagai tombol henti
+    // dan tidak membangunkan AI.
     audio_service.EnableWakeWordDetection(false);
     streaming_ = true;
     // Beri tahu lampu indikator supaya warnanya berubah menjadi ungu.
@@ -1261,7 +1261,7 @@ void MusicPlayer::RunDecoder() {
                 continue;
             }
 
-            // Campur ke mono karena keluaran boneka hanya satu speaker.
+            // Campur ke mono karena keluaran robot hanya satu speaker.
             const int16_t* samples = reinterpret_cast<const int16_t*>(pcm_out.data());
             size_t sample_count = frame.decoded_size / sizeof(int16_t);
             if (info.channel >= 2) {

@@ -14,7 +14,7 @@
 /*
  * Tambahan Mr Great: peta warna lampu indikator.
  *
- * Boneka ini dipakai tanpa layar, jadi LED RGB bawaan menjadi satu-satunya
+ * Robot ini dipakai tanpa layar, jadi LED RGB bawaan menjadi satu-satunya
  * penanda kondisi perangkat. Setiap kondisi memakai warna yang jelas berbeda:
  *
  *   Biru berkedip cepat   : sedang menyala dan menyiapkan diri
@@ -193,7 +193,7 @@ void SingleLed::OnStateChanged() {
                 StartContinuousBlink(250);
             } else if (network == NetworkIndicator::kConnected) {
                 // Siaga dan siap diajak bicara. Nyala redup supaya tidak silau
-                // tetapi tetap terlihat bahwa boneka hidup dan siap.
+                // tetapi tetap terlihat bahwa robot hidup dan siap.
                 SetColor(COLOR_GREEN_DIM);
                 TurnOn();
             } else {

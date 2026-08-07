@@ -81,17 +81,16 @@ idf.py build
 Setelah menyala, urutan berikut menandakan semuanya berjalan:
 
 ```text
-I RiriTouch: Foil kepala aktif di GPIO1 (kanal 1) -> Tidur.ogg
-I RiriTouch: 8 dari 8 titik sentuh berhasil dikonfigurasi
-I RiriTouch: Perangkat tenang setelah ... ms, menunggu jeda stabil
-I RiriTouch: Kalibrasi akhir selesai, sensor sentuh aktif dalam 2000 ms
-I RiriTouch: Sensor sentuh siap menerima sentuhan
+I CompactWifiBoard: Driver SSD1306 berhasil dipasang
+I MCP: Add tool: self.servo.power
+I MCP: Add tool: self.servo.action
 I CampusMCP: Campus + Web Search + Music tools registered
+I AudioCodec: Penegas nada tinggi mikrofon: 1800 Hz, +12.0 dB, ruang puncak 0.70
+I CustomWakeWord: Command: hai hai, Text: Hai Hai, Action: wake
 ```
 
-Jangan menyentuh foil sebelum baris **Sensor sentuh siap menerima sentuhan**
-muncul. Sebelum itu foil memang sengaja belum aktif karena garis dasarnya
-sedang diambil.
+Baris penegas nada tinggi menandakan penyaring mikrofon aktif. Tanpa baris itu,
+suara masuk akan terdengar mendem seperti sebelum perbaikan.
 
 ## Masalah yang Sering Muncul
 

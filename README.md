@@ -19,9 +19,6 @@ masalah lama diperbaiki di sepanjang jalan.
 ![Tampilan robot Mr Great 6](<docs/mrgreat/mrgreatrobot (6).jpeg>)
 ![Tampilan robot Mr Great 7](<docs/mrgreat/mrgreatrobot (7).jpeg>)
 
-![Poster fitur Mr Great](docs/mrgreat/mrgreat-poster-fitur-v1.png)
-![Dokumentasi fitur Mr Great](docs/mrgreat/mrgreat-dokumentasi-fitur-v1.png)
-
 ## Fitur Utama
 
 - Kata bangun lokal `hai hai` untuk memanggil Mr Great.

@@ -1080,7 +1080,7 @@ void Application::HandleStateChangedEvent() {
                 // Only AFE wake word can be detected in speaking mode, dan hanya
                 // bila peredam gema benar-benar berjalan.
                 //
-                // Tanpa peredam gema, mikrofon mendengar pengeras suara boneka
+                // Tanpa peredam gema, mikrofon mendengar pengeras suara robot
                 // sendiri dan ucapan Mr Great sering dikenali sebagai kata pemicu.
                 // Akibatnya Mr Great memotong kalimatnya sendiri di tengah jalan,
                 // membunyikan nada balasan, lalu berpindah ke mode mendengarkan

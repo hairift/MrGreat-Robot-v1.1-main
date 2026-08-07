@@ -25,7 +25,7 @@ papan pada `GPIO48` menjadi penanda utama kondisi perangkat.
 Tiga warna yang paling sering diperhatikan sehari-hari:
 
 - **Hijau redup** berarti semua beres. Mr Great siap dipanggil dengan kata pemicu
-  "hai hai" atau disentuh tangannya.
+  "hai hai" atau tombol manualnya ditekan.
 - **Kuning berkedip** berarti Wi-Fi sempat masuk lalu putus. Biasanya sinyal
   lemah atau router sedang sibuk. Mr Great akan menyambung ulang sendiri.
 - **Merah berkedip** berarti ada galat jaringan atau server. Periksa koneksi
