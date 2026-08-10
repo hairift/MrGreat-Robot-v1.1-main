@@ -5,19 +5,24 @@ ESP32-S3. Fokusnya pengetahuan kampus UCIC dan Kota Cirebon, pencarian web,
 pemutar musik, layar OLED, serta servo kepala dan tangan yang bergerak
 mengikuti emosi maupun perintah pengguna.
 
-Versi ini adalah migrasi penuh ke arsitektur firmware terbaru. Seluruh
-kustomisasi Mr Great dari versi sebelumnya sudah dipindahkan, dan beberapa
+**Versi V1.1.** Migrasi penuh ke arsitektur firmware terbaru. Seluruh
+kustomisasi Mr Great dari versi sebelumnya sudah dipindahkan, dan sejumlah
 masalah lama diperbaiki di sepanjang jalan.
+
+## Poster dan Dokumentasi Fitur
+
+| | |
+|:---:|:---:|
+| <img src="docs/mrgreat/MrGreat_Poster_V0.1.png" width="420"><br>Poster Mr Great | <img src="docs/mrgreat/Dokumentasi%20Fitur.png" width="420"><br>Dokumentasi fitur |
 
 ## Pratinjau Perangkat
 
-![Tampilan robot Mr Great](<docs/mrgreat/mrgreatrobot (1).jpeg>)
-![Tampilan robot Mr Great 2](<docs/mrgreat/mrgreatrobot (2).jpeg>)
-![Tampilan robot Mr Great 3](<docs/mrgreat/mrgreatrobot (3).jpeg>)
-![Tampilan robot Mr Great 4](<docs/mrgreat/mrgreatrobot (4).jpeg>)
-![Tampilan robot Mr Great 5](<docs/mrgreat/mrgreatrobot (5).jpeg>)
-![Tampilan robot Mr Great 6](<docs/mrgreat/mrgreatrobot (6).jpeg>)
-![Tampilan robot Mr Great 7](<docs/mrgreat/mrgreatrobot (7).jpeg>)
+| | |
+|:---:|:---:|
+| <img src="docs/mrgreat/mrgreatrobot%20(1).jpeg" width="330"> | <img src="docs/mrgreat/mrgreatrobot%20(2).jpeg" width="330"> |
+| <img src="docs/mrgreat/mrgreatrobot%20(3).jpeg" width="330"> | <img src="docs/mrgreat/mrgreatrobot%20(4).jpeg" width="330"> |
+| <img src="docs/mrgreat/mrgreatrobot%20(5).jpeg" width="330"> | <img src="docs/mrgreat/mrgreatrobot%20(6).jpeg" width="330"> |
+| <img src="docs/mrgreat/mrgreatrobot%20(7).jpeg" width="330"> | |
 
 ## Fitur Utama
 
@@ -132,6 +137,20 @@ idf.py -p COM3 -b 115200 flash
 - [Protokol MQTT dan UDP](docs/mqtt-udp.md)
 - [Daftar validasi perangkat keras](docs/production-hardware-checklist.md)
 - [Protokol WebSocket](docs/websocket.md)
+
+## Versi
+
+Proyek ini adalah **V1.1**. Baris berikut muncul paling awal di monitor:
+
+```text
+I main: Mr Great Robot V1.1
+```
+
+Angka `App version` yang muncul tepat sesudahnya adalah versi firmware hulu,
+bukan versi proyek ini, dan sengaja dibiarkan apa adanya. Angka itu dipakai
+server OTA untuk membandingkan versi, dan pembaruan berjalan otomatis saat
+boot. Menurunkannya membuat server menganggap ada versi yang lebih baru,
+sehingga seluruh kustomisasi di sini akan tertimpa firmware hulu.
 
 ## Catatan Rilis
 
