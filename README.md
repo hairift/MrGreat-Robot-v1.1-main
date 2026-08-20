@@ -9,13 +9,15 @@ mengikuti emosi maupun perintah pengguna.
 kustomisasi Mr Great dari versi sebelumnya sudah dipindahkan, dan sejumlah
 masalah lama diperbaiki di sepanjang jalan.
 
-## Poster dan Dokumentasi Fitur
+## Poster
 
-| | |
-|:---:|:---:|
-| <img src="docs/mrgreat/MrGreat_Poster_V0.1.png" width="420"><br>Poster Mr Great | <img src="docs/mrgreat/Dokumentasi%20Fitur.png" width="420"><br>Dokumentasi fitur |
+<div align="center">
+  <img src="docs/mrgreat/MrGreat_Poster_V0.1.png" width="420">
+</div>
 
 ## Pratinjau Perangkat
+
+<div align="center">
 
 | | |
 |:---:|:---:|
@@ -23,6 +25,8 @@ masalah lama diperbaiki di sepanjang jalan.
 | <img src="docs/mrgreat/mrgreatrobot%20(3).jpeg" width="330"> | <img src="docs/mrgreat/mrgreatrobot%20(4).jpeg" width="330"> |
 | <img src="docs/mrgreat/mrgreatrobot%20(5).jpeg" width="330"> | <img src="docs/mrgreat/mrgreatrobot%20(6).jpeg" width="330"> |
 | <img src="docs/mrgreat/mrgreatrobot%20(7).jpeg" width="330"> | |
+
+</div>
 
 ## Fitur Utama
 
