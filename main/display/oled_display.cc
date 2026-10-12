@@ -5,6 +5,7 @@
 #include "settings.h"
 
 #include <algorithm>
+#include <cstring>
 #include <string>
 
 #include <esp_err.h>
@@ -408,28 +409,66 @@ void OledDisplay::SetupUI_128x32() {
                                    LV_PART_MAIN);
 }
 
+namespace {
+// Terjemahan nama ikon sistem dari firmware hulu ke ekspresi wajah kustom
+// Mr Great. Tanpa pemetaan ini, layar OLED menampilkan ikon bawaan pada
+// beberapa keadaan, misalnya ikon gerigi saat masuk mode konfigurasi WiFi.
+struct PasanganEmosiSistem {
+    const char* nama_sistem;
+    const char* nama_kustom;
+};
+
+constexpr PasanganEmosiSistem kPetaEmosiSistem[] = {
+    {"gear", "thinking"},            // masuk mode konfigurasi WiFi
+    {"robot_2", "neutral"},          // selesai memuat aset
+    {"cloud_download", "thinking"},  // mengunduh aset
+    {"download", "thinking"},        // mengunduh versi baru
+    {"cloud_off", "sad"},            // gagal menghubungi server
+    {"link", "happy"},               // aktivasi perangkat
+    {"warning", "surprised"},        // peringatan
+    {"cancel", "sad"},               // kesalahan
+};
+
+const char* PetakanNamaEmosi(const char* nama) {
+    if (nama == nullptr) {
+        return "neutral";
+    }
+    for (const auto& pasangan : kPetaEmosiSistem) {
+        if (strcmp(nama, pasangan.nama_sistem) == 0) {
+            return pasangan.nama_kustom;
+        }
+    }
+    return nama;
+}
+}  // namespace
+
 void OledDisplay::SetEmotion(const char* emotion) {
     if (emotion == nullptr) {
         emotion = "neutral";
     }
 
-    // Tambahan Mr Great: ekspresi wajah selalu memakai gambar kustom lebih
-    // dulu. Nama yang bukan ekspresi wajah, misalnya ikon sistem, tetap jatuh
-    // ke font ikon di bawah.
-    {
-        const LvglImage* gambar = emoji_collection_.GetEmojiImage(emotion);
-        if (gambar != nullptr && emotion_image_ != nullptr) {
-            DisplayLockGuard lock(this);
-            lv_image_set_src(emotion_image_, gambar->image_dsc());
-            lv_obj_remove_flag(emotion_image_, LV_OBJ_FLAG_HIDDEN);
-            if (emotion_label_ != nullptr) {
-                lv_obj_add_flag(emotion_label_, LV_OBJ_FLAG_HIDDEN);
-            }
-            lv_obj_invalidate(emotion_image_);
-            return;
+    // Tambahan Mr Great: layar OLED selalu memakai gambar kustom, termasuk
+    // ketika firmware meminta ikon sistem. Nama sistem dipetakan lebih dulu,
+    // lalu nama yang tetap tidak dikenal jatuh ke wajah netral kustom supaya
+    // ikon bawaan tidak pernah muncul.
+    const char* nama_emoji = PetakanNamaEmosi(emotion);
+    const LvglImage* gambar = emoji_collection_.GetEmojiImage(nama_emoji);
+    if (gambar == nullptr) {
+        gambar = emoji_collection_.GetEmojiImage("neutral");
+    }
+    if (gambar != nullptr && emotion_image_ != nullptr) {
+        DisplayLockGuard lock(this);
+        lv_image_set_src(emotion_image_, gambar->image_dsc());
+        lv_obj_remove_flag(emotion_image_, LV_OBJ_FLAG_HIDDEN);
+        if (emotion_label_ != nullptr) {
+            lv_obj_add_flag(emotion_label_, LV_OBJ_FLAG_HIDDEN);
         }
+        lv_obj_invalidate(emotion_image_);
+        return;
     }
 
+    // Cadangan terakhir hanya terpakai bila komponen emoji kustom benar-benar
+    // tidak menyediakan gambar apa pun.
     auto lvgl_theme = static_cast<LvglTheme*>(current_theme_);
     const char* utf8 = noto_emoji_get_utf8(emotion);
     const lv_font_t* emotion_font = lvgl_theme->emoji_font()->font();

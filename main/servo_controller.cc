@@ -24,6 +24,35 @@
 #define SPEAKING_MOTION_INTERVAL_MS 850
 #define SPEAKING_SENTENCE_FALLBACK_MS 3000
 
+// ---------------------------------------------------------------------------
+// Penjagaan arus servo
+//
+// Tiga servo SG90 dapat menarik arus puncak yang besar, terutama saat mulai
+// bergerak dan saat berakselerasi tajam. Arus puncak itulah yang paling sering
+// menjatuhkan tegangan pasokan dan membuat perangkat memulai ulang. Ketiga
+// angka di bawah menahan arus puncak itu hanya dengan mengatur perangkat lunak,
+// tanpa mengubah rangkaian.
+// ---------------------------------------------------------------------------
+
+// Jeda antar penyalaan servo saat boot. Menyalakan tiga servo sekaligus
+// membuat lonjakan arusnya menumpuk pada satu titik.
+#define SERVO_INIT_STAGGER_MS 150
+
+// Batas laju sudut servo dalam derajat per detik. Bila sebuah langkah meminta
+// gerakan jauh dalam waktu singkat, durasinya diperpanjang otomatis supaya
+// servo tidak berakselerasi tajam. Turunkan angkanya bila perangkat masih
+// memulai ulang; naikkan bila gerakan terasa terlalu lambat.
+#define SERVO_MAKS_DERAJAT_PER_DETIK 420
+
+// Selisih awal gerak antar saluran, dalam jumlah frame. Kepala mulai lebih
+// dulu, lalu lengan kanan, lalu lengan kiri, supaya ketiganya tidak
+// berakselerasi pada saat yang sama.
+#define SERVO_STAGGER_FRAME 2
+
+// Ukuran tumpukan tugas servo. Tugas ini memanggil fungsi PWM dan pencatatan
+// log, jadi ruangnya diberi kelegaan supaya tidak meluap dan memicu restart.
+#define SERVO_TASK_STACK 6144
+
 // Kepala tanpa inversi, ditukar agar sesuai dengan posisi fisik
 #define H_C   90
 #define H_L  140
@@ -495,14 +524,18 @@ void ServoController::Initialize(int head_gpio, int right_arm_gpio, int left_arm
     tcfg.clk_cfg = LEDC_AUTO_CLK;
     ESP_ERROR_CHECK(ledc_timer_config(&tcfg));
 
+    // Ketiga servo dinyalakan bergantian, bukan sekaligus, supaya lonjakan
+    // arus saat boot tidak menumpuk pada satu titik dan menjatuhkan tegangan.
     InitServo(head_channel_, head_gpio, H_C);
+    vTaskDelay(pdMS_TO_TICKS(SERVO_INIT_STAGGER_MS));
     InitServo(rarm_channel_, right_arm_gpio, A_DN);
+    vTaskDelay(pdMS_TO_TICKS(SERVO_INIT_STAGGER_MS));
     InitServo(larm_channel_, left_arm_gpio, A_DN);
     vTaskDelay(pdMS_TO_TICKS(SERVO_REST_RELEASE_MS));
     ReleaseServoOutputs();
 
     cmd_queue_ = xQueueCreate(8, sizeof(CmdPacket));
-    xTaskCreate(ServoTask, "servo_task", 4096, this, 3, &task_handle_);
+    xTaskCreate(ServoTask, "servo_task", SERVO_TASK_STACK, this, 3, &task_handle_);
     enabled_ = true;
     initialized_ = true;
     ESP_LOGI(TAG, "READY h=%d r=%d(i=%d) l=%d(i=%d) default=ON",
@@ -693,13 +726,46 @@ void ServoController::MoveToAngles(int head_angle, int rarm_angle, int larm_angl
         return;
     }
 
+    // Batasi laju sudut: langkah yang meminta gerakan jauh dalam waktu singkat
+    // diperpanjang durasinya supaya servo tidak berakselerasi tajam dan arus
+    // puncaknya tidak melonjak.
+    const int delta_head = head_angle > current_head_angle_ ? head_angle - current_head_angle_
+                                                            : current_head_angle_ - head_angle;
+    const int delta_rarm = rarm_angle > current_rarm_angle_ ? rarm_angle - current_rarm_angle_
+                                                            : current_rarm_angle_ - rarm_angle;
+    const int delta_larm = larm_angle > current_larm_angle_ ? larm_angle - current_larm_angle_
+                                                            : current_larm_angle_ - larm_angle;
+    int delta_maks = delta_head > delta_rarm ? delta_head : delta_rarm;
+    if (delta_larm > delta_maks) {
+        delta_maks = delta_larm;
+    }
+    const int durasi_minimum_ms = delta_maks * 1000 / SERVO_MAKS_DERAJAT_PER_DETIK;
+    if (duration_ms < durasi_minimum_ms) {
+        duration_ms = durasi_minimum_ms;
+    }
+
     int frames = (duration_ms + SERVO_FRAME_MS - 1) / SERVO_FRAME_MS;
     if (frames < 1) {
         frames = 1;
     }
 
+    // Tiap saluran memakai jendela gerak yang sama panjang, tetapi dimulai
+    // bergeser beberapa frame supaya puncak arusnya tidak berbarengan.
+    // Saluran yang tidak bergerak tidak ikut menggeser apa pun.
+    const int geser_head = 0;
+    int geser_total = 0;
+    if (delta_rarm > 0) {
+        geser_total += SERVO_STAGGER_FRAME;
+    }
+    const int geser_rarm = geser_total;
+    if (delta_larm > 0) {
+        geser_total += SERVO_STAGGER_FRAME;
+    }
+    const int geser_larm = geser_total;
+    const int total_frames = frames + geser_total;
+
     TickType_t frame_clock = xTaskGetTickCount();
-    for (int frame = 1; frame <= frames; frame++) {
+    for (int frame = 1; frame <= total_frames; frame++) {
         if (!enabled_) {
             return;
         }
@@ -707,12 +773,22 @@ void ServoController::MoveToAngles(int head_angle, int rarm_angle, int larm_angl
             return;
         }
 
+        int head_frame = frame - geser_head;
+        int rarm_frame = frame - geser_rarm;
+        int larm_frame = frame - geser_larm;
+        if (head_frame < 1) head_frame = 1;
+        else if (head_frame > frames) head_frame = frames;
+        if (rarm_frame < 1) rarm_frame = 1;
+        else if (rarm_frame > frames) rarm_frame = frames;
+        if (larm_frame < 1) larm_frame = 1;
+        else if (larm_frame > frames) larm_frame = frames;
+
         int32_t next_head_q16 =
-            EaseMinimumJerkQ16(start_head_q16, target_head_q16, frame, frames);
+            EaseMinimumJerkQ16(start_head_q16, target_head_q16, head_frame, frames);
         int32_t next_rarm_q16 =
-            EaseMinimumJerkQ16(start_rarm_q16, target_rarm_q16, frame, frames);
+            EaseMinimumJerkQ16(start_rarm_q16, target_rarm_q16, rarm_frame, frames);
         int32_t next_larm_q16 =
-            EaseMinimumJerkQ16(start_larm_q16, target_larm_q16, frame, frames);
+            EaseMinimumJerkQ16(start_larm_q16, target_larm_q16, larm_frame, frames);
 
         SetAngleQ16(head_channel_, next_head_q16, invert_head_);
         SetAngleQ16(rarm_channel_, next_rarm_q16, invert_rarm_);
