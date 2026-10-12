@@ -730,18 +730,13 @@ void Application::InitializeProtocol() {
                 auto& servo = ServoController::GetInstance();
                 servo.SetKnowledgeSearchActive(false);
                 ServoMove perintah_servo = ServoController::DetectCommand(text->valuestring);
-                bool perintah_servo_ditangani = false;
                 if (perintah_servo == ServoMove::ENABLE_SERVO) {
                     servo.Enable();
-                    perintah_servo_ditangani = true;
                 } else if (perintah_servo == ServoMove::DISABLE_SERVO) {
                     servo.Disable();
-                    perintah_servo_ditangani = true;
                 } else if (perintah_servo != ServoMove::NONE) {
                     servo.ExecuteMove(perintah_servo);
-                    perintah_servo_ditangani = true;
                 }
-                last_stt_had_servo_command_ = perintah_servo_ditangani;
 
                 Schedule([display, message = std::string(text->valuestring),
                           glyphs = std::move(glyphs), bpp]() {
@@ -752,16 +747,14 @@ void Application::InitializeProtocol() {
         } else if (strcmp(type->valuestring, "llm") == 0) {
             auto emotion = cJSON_GetObjectItem(root, "emotion");
             if (cJSON_IsString(emotion)) {
-                // Gestur emosi dilewati bila giliran ini memang berisi perintah
-                // gerakan. Tanpa itu, gerakan yang diminta pengguna langsung
-                // tertimpa gestur emosi dan terlihat seperti perintahnya
-                // diabaikan.
-                if (last_stt_had_servo_command_.load()) {
-                    ESP_LOGI(TAG, "Gestur emosi '%s' dilewati karena ada perintah servo",
-                             emotion->valuestring);
-                } else {
-                    ServoController::GetInstance().SetEmotion(emotion->valuestring);
-                }
+                // ServoController sendiri yang memutuskan gestur emosi boleh
+                // berjalan atau tidak: selama override manual atau posisi manual
+                // masih ditahan, SetEmotion menolak dan mencatat alasannya.
+                // Penanda di sisi aplikasi dihapus karena dulu menandai
+                // "perintah dikenali", bukan "gerakan benar-benar berjalan",
+                // sehingga gestur bisa tersembunyi untuk gerakan yang tidak
+                // pernah terjadi.
+                ServoController::GetInstance().SetEmotion(emotion->valuestring);
                 Schedule([display, emotion_str = std::string(emotion->valuestring)]() {
                     display->SetEmotion(emotion_str.c_str());
                 });

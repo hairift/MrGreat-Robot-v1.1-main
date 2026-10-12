@@ -40,6 +40,11 @@ static const char* NamaAlasanReboot(esp_reset_reason_t alasan)
         case ESP_RST_DEEPSLEEP: return "DEEPSLEEP (bangun dari tidur dalam)";
         case ESP_RST_BROWNOUT:  return "BROWNOUT (tegangan pasokan turun)";
         case ESP_RST_SDIO:      return "SDIO";
+        case ESP_RST_USB:       return "USB (reset lewat periferal USB)";
+        case ESP_RST_JTAG:      return "JTAG";
+        case ESP_RST_EFUSE:     return "EFUSE (galat efuse)";
+        case ESP_RST_PWR_GLITCH: return "PWR_GLITCH (gangguan pada pasokan daya)";
+        case ESP_RST_CPU_LOCKUP: return "CPU_LOCKUP (prosesor terkunci)";
         default:                return "TIDAK DIKETAHUI";
     }
 }

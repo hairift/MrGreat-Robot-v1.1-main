@@ -184,12 +184,6 @@ private:
 
     bool has_server_time_ = false;
     bool aborted_ = false;
-    // Tambahan Mr Great: menandai giliran percakapan yang memang berisi
-    // perintah gerakan, supaya gestur emosi tidak menimpanya.
-    //
-    // Dijadikan atomik karena ditulis dari alur pesan protokol dan dibaca dari
-    // alur yang sama, yang dapat berjalan di tugas berbeda.
-    std::atomic<bool> last_stt_had_servo_command_{false};
     bool assets_version_checked_ = false;
     bool play_popup_on_listening_ = false;  // Flag to play popup sound after state changes to listening
     bool pending_listening_start_ = false;  // Waiting for playback to drain before starting listening (auto mode)

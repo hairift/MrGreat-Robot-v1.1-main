@@ -18,7 +18,16 @@
 #define SERVO_TIMER     LEDC_TIMER_1
 #define SERVO_MODE      LEDC_LOW_SPEED_MODE
 #define MANUAL_OVERRIDE_MS 6000
-#define DUPLICATE_MOVE_IGNORE_MS 8000
+// Jendela abaikan perintah kembar tidak boleh lebih panjang daripada masa
+// override manual. Bila lebih panjang, ada selang waktu ketika override sudah
+// berakhir sehingga gestur emosi dapat menggerakkan lengan, tetapi perintah
+// suara yang sama masih ditolak sebagai kembar. Karena itu nilainya
+// disamakan langsung dengan MANUAL_OVERRIDE_MS, bukan ditulis terpisah.
+#define DUPLICATE_MOVE_IGNORE_MS MANUAL_OVERRIDE_MS
+// Lama posisi manual ditahan sebelum gestur otomatis boleh mengambil alih.
+// Disamakan dengan masa override manual supaya kedua penanda berakhir
+// bersamaan dan tidak ada selang waktu yang tidak konsisten.
+#define MANUAL_POSE_HOLD_MS MANUAL_OVERRIDE_MS
 #define SERVO_FRAME_MS  20
 #define SERVO_REST_RELEASE_MS 350
 #define SPEAKING_MOTION_INTERVAL_MS 850
@@ -545,7 +554,7 @@ void ServoController::Initialize(int head_gpio, int right_arm_gpio, int left_arm
 void ServoController::Enable()  {
     enabled_ = true;
     manual_override_until_ticks_ = 0;
-    manual_pose_active_ = false;
+    manual_pose_until_ticks_ = 0;
     knowledge_search_active_ = false;
     last_manual_move_ = ServoMove::NONE;
     last_manual_move_ticks_ = 0;
@@ -558,7 +567,7 @@ void ServoController::Disable() {
     tts_stream_active_ = false;
     last_sentence_gesture_ticks_ = 0;
     knowledge_search_active_ = false;
-    manual_pose_active_ = false;
+    manual_pose_until_ticks_ = 0;
     last_manual_move_ = ServoMove::NONE;
     last_manual_move_ticks_ = 0;
     if (initialized_) {
@@ -572,7 +581,7 @@ void ServoController::Disable() {
 
 void ServoController::SetEmotion(const char* emotion) {
     if (!initialized_ || !enabled_ || !emotion) return;
-    if (IsManualOverrideActive() || manual_pose_active_.load()) {
+    if (IsManualOverrideActive() || IsManualPoseActive()) {
         ESP_LOGI(TAG, "Skip emotion '%s' during manual override", emotion);
         return;
     }
@@ -599,7 +608,7 @@ void ServoController::SetTtsStreamActive(bool active) {
 
 void ServoController::NotifyTtsSentence() {
     if (!initialized_ || !enabled_ || !tts_stream_active_.load() ||
-        IsManualOverrideActive() || manual_pose_active_.load()) {
+        IsManualOverrideActive() || IsManualPoseActive()) {
         return;
     }
     last_sentence_gesture_ticks_ = xTaskGetTickCount();
@@ -621,7 +630,7 @@ bool ServoController::IsMotionActive() const {
 }
 
 void ServoController::WakeGreeting() {
-    if (!initialized_ || !enabled_ || manual_pose_active_.load()) {
+    if (!initialized_ || !enabled_ || IsManualPoseActive()) {
         return;
     }
     CmdPacket pkt = {};
@@ -666,16 +675,27 @@ bool ServoController::IsManualOverrideActive() const {
     return until != 0 && static_cast<int32_t>(until - now) > 0;
 }
 
+bool ServoController::IsManualPoseActive() const {
+    TickType_t until = manual_pose_until_ticks_.load();
+    return until != 0 && static_cast<int32_t>(until - xTaskGetTickCount()) > 0;
+}
+
 bool ServoController::ShouldSkipDuplicateMove(ServoMove move) {
     TickType_t now = xTaskGetTickCount();
     TickType_t duplicate_window = pdMS_TO_TICKS(DUPLICATE_MOVE_IGNORE_MS);
-    bool duplicate = last_manual_move_ == move &&
+    // Bila perintah ini kembar dengan yang terakhir dijalankan, cap waktunya
+    // sengaja tidak diperbarui. Kalau diperbarui pada jalur ini, jendela
+    // abaikan akan bergeser setiap kali perintah diulang sehingga perintah
+    // yang sama tidak pernah dijalankan lagi sampai pengguna berhenti
+    // memintanya selama satu jendela penuh.
+    if (last_manual_move_ == move &&
         static_cast<int32_t>(now - last_manual_move_ticks_) >= 0 &&
-        static_cast<int32_t>(now - last_manual_move_ticks_) < static_cast<int32_t>(duplicate_window);
-
+        static_cast<int32_t>(now - last_manual_move_ticks_) < static_cast<int32_t>(duplicate_window)) {
+        return true;
+    }
     last_manual_move_ = move;
     last_manual_move_ticks_ = now;
-    return duplicate;
+    return false;
 }
 
 bool ServoController::IsHoldMove(ServoMove move) const {
@@ -820,7 +840,7 @@ void ServoController::PlaySteps(const ServoController::ServoStep* st, int n, boo
 
 void ServoController::PlaySpeakingMotion() {
     if (!enabled_ || !speaking_.load() || IsManualOverrideActive() ||
-        manual_pose_active_.load()) {
+        IsManualPoseActive()) {
         return;
     }
 
@@ -864,7 +884,7 @@ void ServoController::ServoTask(void* arg) {
 
         if (pkt.type == 0) {
             if (!self->enabled_) continue;
-            if (self->IsManualOverrideActive() || self->manual_pose_active_.load()) continue;
+            if (self->IsManualOverrideActive() || self->IsManualPoseActive()) continue;
             const EmotionSequence* seq = nullptr;
             for (int i = 0; i < NUM_SEQUENCES; i++)
                 if (strcmp(SEQUENCES[i].emotion, pkt.data) == 0) { seq = &SEQUENCES[i]; break; }
@@ -873,7 +893,7 @@ void ServoController::ServoTask(void* arg) {
             self->PlaySteps(seq->steps, seq->num_steps);
         } else if (pkt.type == 2) {
             if (!self->enabled_ || self->IsManualOverrideActive() ||
-                self->manual_pose_active_.load()) {
+                self->IsManualPoseActive()) {
                 continue;
             }
             ESP_LOGI(TAG, "Sapaan wake word");
@@ -913,9 +933,15 @@ void ServoController::ServoTask(void* arg) {
             #undef C
             if (st && n > 0) {
                 self->PlaySteps(st, n, true);
-                self->manual_pose_active_ = self->IsHoldMove(mv);
+                // Tahan posisi hanya selama jendela waktu tertentu. Tanpa batas
+                // waktu, satu perintah seperti "angkat tangan kanan" akan
+                // memblokir gestur emosi, sapaan, dan gerakan saat berbicara
+                // selamanya karena penandanya tidak pernah turun sendiri.
+                self->manual_pose_until_ticks_ = self->IsHoldMove(mv)
+                    ? xTaskGetTickCount() + pdMS_TO_TICKS(MANUAL_POSE_HOLD_MS)
+                    : 0;
                 if (mv == ServoMove::RESET_POSITION) {
-                    self->manual_pose_active_ = false;
+                    self->manual_pose_until_ticks_ = 0;
                 }
                 self->next_speaking_motion_ticks_.store(
                     xTaskGetTickCount() + pdMS_TO_TICKS(SPEAKING_MOTION_INTERVAL_MS));

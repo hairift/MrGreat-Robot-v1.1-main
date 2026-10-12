@@ -96,6 +96,7 @@ private:
     void PlaySteps(const ServoStep* st, int n, bool manual_move = false);
     void ExtendManualOverride(TickType_t duration_ticks);
     bool IsManualOverrideActive() const;
+    bool IsManualPoseActive() const;
     bool ShouldSkipDuplicateMove(ServoMove move);
     bool IsHoldMove(ServoMove move) const;
     bool IsRestPosition() const;
@@ -128,7 +129,10 @@ private:
     std::atomic<bool> speaking_{false};
     std::atomic<bool> tts_stream_active_{false};
     std::atomic<bool> knowledge_search_active_{false};
-    std::atomic<bool> manual_pose_active_{false};
+    // Batas waktu posisi manual yang sedang ditahan. Sebelumnya penanda ini
+    // berupa bool yang tidak pernah kedaluwarsa sehingga gestur otomatis
+    // berhenti selamanya setelah satu perintah seperti "angkat tangan kanan".
+    std::atomic<TickType_t> manual_pose_until_ticks_{0};
     std::atomic<TickType_t> last_sentence_gesture_ticks_{0};
     ServoMove last_manual_move_ = ServoMove::NONE;
     TickType_t last_manual_move_ticks_ = 0;
